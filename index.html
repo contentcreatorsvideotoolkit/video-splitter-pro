@@ -13,14 +13,14 @@
 }
 
 body{
-    font-family:Arial, sans-serif;
+    font-family:Arial,sans-serif;
     background:#111827;
     color:#fff;
     padding:20px;
 }
 
 .container{
-    max-width:900px;
+    max-width:1000px;
     margin:auto;
 }
 
@@ -37,31 +37,31 @@ h1{
 }
 
 #dropZone{
-    border:3px dashed #4b5563;
+    border:3px dashed #555;
     border-radius:12px;
-    padding:50px;
+    padding:40px;
     text-align:center;
     cursor:pointer;
-    transition:.3s;
+    transition:0.3s;
 }
 
-#dropZone.dragover{
+#dropZone.drag{
     border-color:#3b82f6;
-    background:#1e3a8a;
+    background:#172554;
 }
 
 video{
     width:100%;
-    margin-top:15px;
-    border-radius:10px;
+    margin-top:20px;
     display:none;
+    border-radius:12px;
 }
 
 .stats{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
     gap:10px;
-    margin-top:15px;
+    margin-top:20px;
 }
 
 .stat{
@@ -72,7 +72,6 @@ video{
 }
 
 select,
-input,
 button{
     width:100%;
     padding:12px;
@@ -91,17 +90,11 @@ button:hover{
     background:#1d4ed8;
 }
 
-.dark-toggle{
-    float:right;
-    width:auto;
-    padding:10px;
-}
-
 .progress{
     margin-top:20px;
     background:#374151;
-    height:22px;
-    border-radius:20px;
+    height:25px;
+    border-radius:30px;
     overflow:hidden;
 }
 
@@ -109,7 +102,16 @@ button:hover{
     width:0%;
     height:100%;
     background:#22c55e;
-    transition:.3s;
+}
+
+#downloads{
+    margin-top:20px;
+}
+
+#downloads a{
+    display:block;
+    color:#60a5fa;
+    margin:10px 0;
 }
 </style>
 </head>
@@ -117,16 +119,12 @@ button:hover{
 
 <div class="container">
 
-<button class="dark-toggle" onclick="toggleTheme()">
-Toggle Theme
-</button>
-
 <h1>Video Splitter Pro</h1>
 
 <div class="card">
 
 <div id="dropZone">
-<h2>Drag & Drop Video</h2>
+<h2>Drag & Drop Video Here</h2>
 <p>or click to upload</p>
 <input type="file" id="videoInput" accept="video/*" hidden>
 </div>
@@ -134,7 +132,6 @@ Toggle Theme
 <video id="videoPreview" controls></video>
 
 <div class="stats">
-
 <div class="stat">
 <h3>Duration</h3>
 <p id="duration">-</p>
@@ -149,7 +146,6 @@ Toggle Theme
 <h3>Segments</h3>
 <p id="segments">-</p>
 </div>
-
 </div>
 
 </div>
@@ -159,8 +155,8 @@ Toggle Theme
 <h2>Split Settings</h2>
 
 <select id="segmentLength">
-<option value="60">YouTube Shorts (60 sec)</option>
-<option value="90">Instagram Reels (90 sec)</option>
+<option value="60">YouTube Shorts (60s)</option>
+<option value="90">Instagram Reels (90s)</option>
 <option value="180">TikTok (3 mins)</option>
 <option value="300">5 Minutes</option>
 <option value="600" selected>10 Minutes</option>
@@ -168,11 +164,7 @@ Toggle Theme
 <option value="1800">30 Minutes</option>
 </select>
 
-<button onclick="calculateSegments()">
-Calculate Segments
-</button>
-
-<button onclick="fakeProcess()">
+<button id="splitBtn">
 Split Video
 </button>
 
@@ -180,11 +172,18 @@ Split Video
 <div class="bar" id="progressBar"></div>
 </div>
 
-</div>
+<div id="downloads"></div>
 
 </div>
 
-<script>
+</div>
+
+<script type="module">
+
+import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+import { fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
+
+const ffmpeg = new FFmpeg();
 
 let uploadedFile = null;
 let durationSeconds = 0;
@@ -193,24 +192,22 @@ const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("videoInput");
 const preview = document.getElementById("videoPreview");
 
-dropZone.addEventListener("click",()=>{
-    fileInput.click();
-});
+dropZone.addEventListener("click",()=>fileInput.click());
 
 dropZone.addEventListener("dragover",(e)=>{
     e.preventDefault();
-    dropZone.classList.add("dragover");
+    dropZone.classList.add("drag");
 });
 
 dropZone.addEventListener("dragleave",()=>{
-    dropZone.classList.remove("dragover");
+    dropZone.classList.remove("drag");
 });
 
 dropZone.addEventListener("drop",(e)=>{
     e.preventDefault();
-    dropZone.classList.remove("dragover");
+    dropZone.classList.remove("drag");
 
-    const file=e.dataTransfer.files[0];
+    const file = e.dataTransfer.files[0];
 
     if(file){
         loadVideo(file);
@@ -218,7 +215,7 @@ dropZone.addEventListener("drop",(e)=>{
 });
 
 fileInput.addEventListener("change",(e)=>{
-    const file=e.target.files[0];
+    const file = e.target.files[0];
 
     if(file){
         loadVideo(file);
@@ -227,91 +224,183 @@ fileInput.addEventListener("change",(e)=>{
 
 function loadVideo(file){
 
-    uploadedFile=file;
+    uploadedFile = file;
 
-    document.getElementById("size").innerText=
-        (file.size/1024/1024).toFixed(2)+" MB";
+    document.getElementById("size").innerText =
+        (file.size / 1024 / 1024).toFixed(2) + " MB";
 
-    const url=URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
 
-    preview.src=url;
-    preview.style.display="block";
+    preview.src = url;
+    preview.style.display = "block";
 
-    preview.onloadedmetadata=()=>{
+    preview.onloadedmetadata = ()=>{
 
-        durationSeconds=Math.floor(preview.duration);
+        durationSeconds =
+            Math.floor(preview.duration);
 
-        const mins=Math.floor(durationSeconds/60);
-        const secs=durationSeconds%60;
+        const mins =
+            Math.floor(durationSeconds/60);
 
-        document.getElementById("duration").innerText=
-            mins+"m "+secs+"s";
+        const secs =
+            durationSeconds % 60;
 
-        calculateSegments();
+        document.getElementById("duration")
+            .innerText =
+            mins + "m " + secs + "s";
+
+        updateEstimate();
     };
 }
 
-function calculateSegments(){
+function updateEstimate(){
 
     if(!durationSeconds) return;
 
-    const segLength=
+    const segmentLength =
         parseInt(
             document.getElementById("segmentLength").value
         );
 
-    const clips=
-        Math.ceil(durationSeconds/segLength);
+    const clips =
+        Math.ceil(
+            durationSeconds / segmentLength
+        );
 
-    document.getElementById("segments").innerText=
-        clips;
+    document.getElementById("segments")
+        .innerText = clips;
 }
 
-function fakeProcess(){
+document
+.getElementById("segmentLength")
+.addEventListener("change",updateEstimate);
+
+document
+.getElementById("splitBtn")
+.addEventListener("click",splitVideo);
+
+async function splitVideo(){
 
     if(!uploadedFile){
-        alert("Please upload a video.");
+        alert("Upload a video first.");
         return;
     }
 
-    let progress=0;
+    document.getElementById("downloads")
+        .innerHTML = "";
 
-    const interval=setInterval(()=>{
+    try{
 
-        progress+=5;
-
-        document.getElementById("progressBar").style.width=
-            progress+"%";
-
-        if(progress>=100){
-
-            clearInterval(interval);
+        if(!ffmpeg.loaded){
 
             alert(
-                "Ready for FFmpeg integration. This starter UI is working correctly."
+                "Loading FFmpeg (first time can take 10-20 seconds)..."
             );
+
+            await ffmpeg.load({
+                coreURL:
+                "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
+                wasmURL:
+                "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm"
+            });
         }
 
-    },100);
+        ffmpeg.on("progress",({progress})=>{
 
-}
+            document.getElementById("progressBar")
+                .style.width =
+                Math.round(progress * 100) + "%";
+        });
 
-function toggleTheme(){
+        await ffmpeg.writeFile(
+            "input.mp4",
+            await fetchFile(uploadedFile)
+        );
 
-    const body=document.body;
+        const segmentLength =
+            document.getElementById("segmentLength")
+            .value;
 
-    if(body.style.background==="white"){
+        await ffmpeg.exec([
+            "-i",
+            "input.mp4",
+            "-c",
+            "copy",
+            "-map",
+            "0",
+            "-f",
+            "segment",
+            "-segment_time",
+            segmentLength,
+            "clip_%03d.mp4"
+        ]);
 
-        body.style.background="#111827";
-        body.style.color="white";
-
-    }else{
-
-        body.style.background="white";
-        body.style.color="#111827";
+        await createDownloadLinks();
 
     }
+    catch(error){
 
+        console.error(error);
+
+        alert(
+            "Processing failed. Open browser console (F12) for details."
+        );
+    }
+}
+
+async function createDownloadLinks(){
+
+    const downloads =
+        document.getElementById("downloads");
+
+    downloads.innerHTML =
+        "<h2>Download Clips</h2>";
+
+    let count = 0;
+
+    while(true){
+
+        const fileName =
+            `clip_${String(count).padStart(3,"0")}.mp4`;
+
+        try{
+
+            const data =
+                await ffmpeg.readFile(fileName);
+
+            const blob =
+                new Blob(
+                    [data.buffer],
+                    {type:"video/mp4"}
+                );
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+            link.download = fileName;
+            link.innerText =
+                "Download " + fileName;
+
+            downloads.appendChild(link);
+
+            count++;
+
+        }
+        catch{
+
+            break;
+        }
+    }
+
+    if(count===0){
+
+        downloads.innerHTML +=
+            "<p>No clips generated.</p>";
+    }
 }
 
 </script>
