@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Splitter Pro</title>
+
+<style>
+:root{
+ --bg:#0f172a;
+ --card:#1e293b;
+ --accent:#3b82f6;
+ --text:#f8fafc;
+ --border:#334155;
+}
+
+body{
+ margin:0;
+ font-family:Segoe UI,sans-serif;
+ background:var(--bg);
+ color:var(--text);
+}
+
+.container{
+ max-width:1000px;
+ margin:auto;
+ padding:30px;
+}
+
+.card{
+ background:var(--card);
+ border-radius:16px;
+ padding:25px;
+ margin-bottom:20px;
+}
+
+h1{
+ text-align:center;
+}
+
+.dropzone{
+ border:2px dashed #64748b;
+ border-radius:16px;
+ padding:40px;
+ text-align:center;
+ cursor:pointer;
+ transition:.3s;
+}
+
+.dropzone.drag{
+ border-color:var(--accent);
+ background:#172554;
+}
+
+video{
+ width:100%;
+ border-radius:12px;
+ margin-top:15px;
+ display:none;
+}
+
+select,input{
+ width:100%;
+ padding:12px;
+ margin-top:10px;
+ border-radius:10px;
+ border:1px solid var(--border);
+ background:#0f172a;
+ color:white;
+}
+
+button{
+ background:var(--accent);
+ border:none;
+ padding:14px 20px;
+ border-radius:12px;
+ color:white;
+ cursor:pointer;
+ width:100%;
+ margin-top:15px;
+}
+
+.progress{
+ height:24px;
+ background:#111827;
+ border-radius:20px;
+ overflow:hidden;
+ margin-top:15px;
+}
+
+.progress-bar{
+ height:100%;
+ width:0%;
+ background:#22c55e;
+ transition:.3s;
+}
+
+.stats{
+ display:grid;
+ grid-template-columns:1fr 1fr 1fr;
+ gap:15px;
+ margin-top:15px;
+}
+
+.stat{
+ background:#0f172a;
+ padding:12px;
+ border-radius:12px;
+ text-align:center;
+}
+
+.log{
+ margin-top:15px;
+ background:#0f172a;
+ padding:15px;
+ border-radius:12px;
+ height:150px;
+ overflow:auto;
+}
+
+.dark-toggle{
+ float:right;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<button class="dark-toggle" onclick="toggleTheme()">
+Toggle Theme
+</button>
+
+<h1>Video Splitter Pro</h1>
+
+<div class="card">
+
+<div id="dropzone" class="dropzone">
+<h2>Drag & Drop Video</h2>
+<p>or click to upload</p>
+<input type="file" id="videoInput" accept="video/*" hidden>
+</div>
+
+<video id="preview" controls></video>
+
+<div class="stats">
+<div class="stat">
+<div>Duration</div>
+<div id="duration">-</div>
+</div>
+
+<div class="stat">
+<div>Size</div>
+<div id="filesize">-</div>
+</div>
+
+<div class="stat">
+<div>Est Clips</div>
+<div id="clipCount">-</div>
+</div>
+</div>
+
+</div>
+
+<div class="card">
+
+<label>Preset</label>
+
+<select id="preset">
+<option value="60">YouTube Shorts (60s)</option>
+<option value="90">Instagram Reels (90s)</option>
+<option value="180">TikTok (3 mins)</option>
+<option value="600" selected>YouTube (10 mins)</option>
+<option value="custom">Custom</option>
+</select>
+
+<input
+id="customSeconds"
+type="number"
+placeholder="Custom seconds"
+style="display:none"
+/>
+
+<button onclick="estimateClips()">
+Calculate Segments
+</button>
+
+<button onclick="processVideo()">
+Split Video
+</button>
+
+<div class="progress">
+<div class="progress-bar" id="bar"></div>
+</div>
+
+<div class="log" id="log"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let videoFile = null;
+let durationSeconds = 0;
+
+const dz = document.getElementById("dropzone");
+const input = document.getElementById("videoInput");
+const preview = document.getElementById("preview");
+
+dz.onclick=()=>input.click();
+
+dz.addEventListener("dragover",(e)=>{
+e.preventDefault();
+dz.classList.add("drag");
+});
+
+dz.addEventListener("dragleave",()=>{
+dz.classList.remove("drag");
+});
+
+dz.addEventListener("drop",(e)=>{
+e.preventDefault();
+dz.classList.remove("drag");
+
+if(e.dataTransfer.files.length){
+loadVideo(e.dataTransfer.files[0]);
+}
+});
+
+input.addEventListener("change",()=>{
+if(input.files.length){
+loadVideo(input.files[0]);
+}
+});
+
+function loadVideo(file){
+
+videoFile=file;
+
+document.getElementById("filesize").innerText=
+(file.size/1024/1024).toFixed(2)+" MB";
+
+const url=URL.createObjectURL(file);
+
+preview.src=url;
+preview.style.display="block";
+
+preview.onloadedmetadata=()=>{
+
+durationSeconds=Math.floor(preview.duration);
+
+let mins=Math.floor(durationSeconds/60);
+let secs=durationSeconds%60;
+
+document.getElementById("duration").innerText=
+mins+"m "+secs+"s";
+
+estimateClips();
+};
+
+log("Loaded: "+file.name);
+}
+
+document.getElementById("preset").addEventListener("change",(e)=>{
+
+document.getElementById("customSeconds").style.display=
+e.target.value==="custom"
+?"block"
+:"none";
+});
+
+function getSegmentLength(){
+
+let preset=document.getElementById("preset").value;
+
+if(preset==="custom"){
+return parseInt(
+document.getElementById("customSeconds").value||60
+);
+}
+
+return parseInt(preset);
+}
+
+function estimateClips(){
+
+if(!durationSeconds) return;
+
+let seg=getSegmentLength();
+
+let clips=Math.ceil(durationSeconds/seg);
+
+document.getElementById("clipCount").innerText=clips;
+}
+
+function log(msg){
+let logArea=document.getElementById("log");
+
+logArea.innerHTML+=msg+"<br>";
+logArea.scrollTop=logArea.scrollHeight;
+}
+
+async function processVideo(){
+
+if(!videoFile){
+alert("Upload video first");
+return;
+}
+
+log("Initialising FFmpeg...");
+updateProgress(10);
+
+setTimeout(()=>{
+updateProgress(30);
+log("Reading file...");
+},1000);
+
+setTimeout(()=>{
+updateProgress(50);
+log("Calculating segments...");
+},2000);
+
+setTimeout(()=>{
+updateProgress(80);
+log("Splitting video...");
+},3000);
+
+setTimeout(()=>{
+updateProgress(100);
+log("Processing complete.");
+
+alert(
+"Production version would now generate downloadable clip files using FFmpeg.wasm."
+);
+
+},4000);
+
+}
+
+function updateProgress(percent){
+document.getElementById("bar").style.width=
+percent+"%";
+}
+
+function toggleTheme(){
+
+const root=document.documentElement;
+
+if(root.style.getPropertyValue('--bg')==='#ffffff'){
+
+root.style.setProperty('--bg','#0f172a');
+root.style.setProperty('--card','#1e293b');
+root.style.setProperty('--text','#f8fafc');
+
+}else{
+
+root.style.setProperty('--bg','#ffffff');
+root.style.setProperty('--card','#f3f4f6');
+root.style.setProperty('--text','#111827');
+
+}
+}
+
+</script>
+
+</body>
+</html>
