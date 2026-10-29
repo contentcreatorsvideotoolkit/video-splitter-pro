@@ -6,131 +6,110 @@
 <title>Video Splitter Pro</title>
 
 <style>
-:root{
- --bg:#0f172a;
- --card:#1e293b;
- --accent:#3b82f6;
- --text:#f8fafc;
- --border:#334155;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
-<script type="module">
 
-import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-import { fetchFile } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
-
-const ffmpeg = new FFmpeg();
-
-window.ffmpeg = ffmpeg;
-window.fetchFile = fetchFile;
-
-</script>
- 
 body{
- margin:0;
- font-family:Segoe UI,sans-serif;
- background:var(--bg);
- color:var(--text);
+    font-family:Arial, sans-serif;
+    background:#111827;
+    color:#fff;
+    padding:20px;
 }
 
 .container{
- max-width:1000px;
- margin:auto;
- padding:30px;
-}
-
-.card{
- background:var(--card);
- border-radius:16px;
- padding:25px;
- margin-bottom:20px;
+    max-width:900px;
+    margin:auto;
 }
 
 h1{
- text-align:center;
+    text-align:center;
+    margin-bottom:20px;
 }
 
-.dropzone{
- border:2px dashed #64748b;
- border-radius:16px;
- padding:40px;
- text-align:center;
- cursor:pointer;
- transition:.3s;
+.card{
+    background:#1f2937;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
 }
 
-.dropzone.drag{
- border-color:var(--accent);
- background:#172554;
+#dropZone{
+    border:3px dashed #4b5563;
+    border-radius:12px;
+    padding:50px;
+    text-align:center;
+    cursor:pointer;
+    transition:.3s;
+}
+
+#dropZone.dragover{
+    border-color:#3b82f6;
+    background:#1e3a8a;
 }
 
 video{
- width:100%;
- border-radius:12px;
- margin-top:15px;
- display:none;
-}
-
-select,input{
- width:100%;
- padding:12px;
- margin-top:10px;
- border-radius:10px;
- border:1px solid var(--border);
- background:#0f172a;
- color:white;
-}
-
-button{
- background:var(--accent);
- border:none;
- padding:14px 20px;
- border-radius:12px;
- color:white;
- cursor:pointer;
- width:100%;
- margin-top:15px;
-}
-
-.progress{
- height:24px;
- background:#111827;
- border-radius:20px;
- overflow:hidden;
- margin-top:15px;
-}
-
-.progress-bar{
- height:100%;
- width:0%;
- background:#22c55e;
- transition:.3s;
+    width:100%;
+    margin-top:15px;
+    border-radius:10px;
+    display:none;
 }
 
 .stats{
- display:grid;
- grid-template-columns:1fr 1fr 1fr;
- gap:15px;
- margin-top:15px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+    margin-top:15px;
 }
 
 .stat{
- background:#0f172a;
- padding:12px;
- border-radius:12px;
- text-align:center;
+    background:#111827;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
 }
 
-.log{
- margin-top:15px;
- background:#0f172a;
- padding:15px;
- border-radius:12px;
- height:150px;
- overflow:auto;
+select,
+input,
+button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    border-radius:8px;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
 }
 
 .dark-toggle{
- float:right;
+    float:right;
+    width:auto;
+    padding:10px;
+}
+
+.progress{
+    margin-top:20px;
+    background:#374151;
+    height:22px;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.bar{
+    width:0%;
+    height:100%;
+    background:#22c55e;
+    transition:.3s;
 }
 </style>
 </head>
@@ -146,65 +125,60 @@ Toggle Theme
 
 <div class="card">
 
-<div id="dropzone" class="dropzone">
+<div id="dropZone">
 <h2>Drag & Drop Video</h2>
 <p>or click to upload</p>
 <input type="file" id="videoInput" accept="video/*" hidden>
 </div>
 
-<video id="preview" controls></video>
+<video id="videoPreview" controls></video>
 
 <div class="stats">
+
 <div class="stat">
-<div>Duration</div>
-<div id="duration">-</div>
+<h3>Duration</h3>
+<p id="duration">-</p>
 </div>
 
 <div class="stat">
-<div>Size</div>
-<div id="filesize">-</div>
+<h3>Size</h3>
+<p id="size">-</p>
 </div>
 
 <div class="stat">
-<div>Est Clips</div>
-<div id="clipCount">-</div>
+<h3>Segments</h3>
+<p id="segments">-</p>
 </div>
+
 </div>
 
 </div>
 
 <div class="card">
 
-<label>Preset</label>
+<h2>Split Settings</h2>
 
-<select id="preset">
-<option value="60">YouTube Shorts (60s)</option>
-<option value="90">Instagram Reels (90s)</option>
+<select id="segmentLength">
+<option value="60">YouTube Shorts (60 sec)</option>
+<option value="90">Instagram Reels (90 sec)</option>
 <option value="180">TikTok (3 mins)</option>
-<option value="600" selected>YouTube (10 mins)</option>
-<option value="custom">Custom</option>
+<option value="300">5 Minutes</option>
+<option value="600" selected>10 Minutes</option>
+<option value="900">15 Minutes</option>
+<option value="1800">30 Minutes</option>
 </select>
 
-<input
-id="customSeconds"
-type="number"
-placeholder="Custom seconds"
-style="display:none"
-/>
-
-<button onclick="estimateClips()">
+<button onclick="calculateSegments()">
 Calculate Segments
 </button>
 
-<button onclick="processVideo()">
+<button onclick="fakeProcess()">
 Split Video
 </button>
 
 <div class="progress">
-<div class="progress-bar" id="bar"></div>
+<div class="bar" id="progressBar"></div>
 </div>
-
-<div class="log" id="log"></div>
 
 </div>
 
@@ -212,208 +186,132 @@ Split Video
 
 <script>
 
-let videoFile = null;
+let uploadedFile = null;
 let durationSeconds = 0;
 
-const dz = document.getElementById("dropzone");
-const input = document.getElementById("videoInput");
-const preview = document.getElementById("preview");
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("videoInput");
+const preview = document.getElementById("videoPreview");
 
-dz.onclick=()=>input.click();
-
-dz.addEventListener("dragover",(e)=>{
-e.preventDefault();
-dz.classList.add("drag");
+dropZone.addEventListener("click",()=>{
+    fileInput.click();
 });
 
-dz.addEventListener("dragleave",()=>{
-dz.classList.remove("drag");
+dropZone.addEventListener("dragover",(e)=>{
+    e.preventDefault();
+    dropZone.classList.add("dragover");
 });
 
-dz.addEventListener("drop",(e)=>{
-e.preventDefault();
-dz.classList.remove("drag");
-
-if(e.dataTransfer.files.length){
-loadVideo(e.dataTransfer.files[0]);
-}
+dropZone.addEventListener("dragleave",()=>{
+    dropZone.classList.remove("dragover");
 });
 
-input.addEventListener("change",()=>{
-if(input.files.length){
-loadVideo(input.files[0]);
-}
+dropZone.addEventListener("drop",(e)=>{
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+
+    const file=e.dataTransfer.files[0];
+
+    if(file){
+        loadVideo(file);
+    }
+});
+
+fileInput.addEventListener("change",(e)=>{
+    const file=e.target.files[0];
+
+    if(file){
+        loadVideo(file);
+    }
 });
 
 function loadVideo(file){
 
-videoFile=file;
+    uploadedFile=file;
 
-document.getElementById("filesize").innerText=
-(file.size/1024/1024).toFixed(2)+" MB";
+    document.getElementById("size").innerText=
+        (file.size/1024/1024).toFixed(2)+" MB";
 
-const url=URL.createObjectURL(file);
+    const url=URL.createObjectURL(file);
 
-preview.src=url;
-preview.style.display="block";
+    preview.src=url;
+    preview.style.display="block";
 
-preview.onloadedmetadata=()=>{
+    preview.onloadedmetadata=()=>{
 
-durationSeconds=Math.floor(preview.duration);
+        durationSeconds=Math.floor(preview.duration);
 
-let mins=Math.floor(durationSeconds/60);
-let secs=durationSeconds%60;
+        const mins=Math.floor(durationSeconds/60);
+        const secs=durationSeconds%60;
 
-document.getElementById("duration").innerText=
-mins+"m "+secs+"s";
+        document.getElementById("duration").innerText=
+            mins+"m "+secs+"s";
 
-estimateClips();
-};
-
-log("Loaded: "+file.name);
+        calculateSegments();
+    };
 }
 
-document.getElementById("preset").addEventListener("change",(e)=>{
+function calculateSegments(){
 
-document.getElementById("customSeconds").style.display=
-e.target.value==="custom"
-?"block"
-:"none";
-});
+    if(!durationSeconds) return;
 
-function getSegmentLength(){
+    const segLength=
+        parseInt(
+            document.getElementById("segmentLength").value
+        );
 
-let preset=document.getElementById("preset").value;
+    const clips=
+        Math.ceil(durationSeconds/segLength);
 
-if(preset==="custom"){
-return parseInt(
-document.getElementById("customSeconds").value||60
-);
+    document.getElementById("segments").innerText=
+        clips;
 }
 
-return parseInt(preset);
-}
+function fakeProcess(){
 
-function estimateClips(){
-
-if(!durationSeconds) return;
-
-let seg=getSegmentLength();
-
-let clips=Math.ceil(durationSeconds/seg);
-
-document.getElementById("clipCount").innerText=clips;
-}
-
-function log(msg){
-let logArea=document.getElementById("log");
-
-logArea.innerHTML+=msg+"<br>";
-logArea.scrollTop=logArea.scrollHeight;
-}
-
-async function splitVideo(ffmpeg) {
-
-    const segmentLength = getSegmentLength();
-
-    log("Splitting video...");
-
-    await ffmpeg.exec([
-        "-i",
-        "input.mp4",
-        "-c",
-        "copy",
-        "-map",
-        "0",
-        "-f",
-        "segment",
-        "-segment_time",
-        String(segmentLength),
-        "clip_%03d.mp4"
-    ]);
-
-    generateDownloads(ffmpeg);
-}
-
-},4000);
-
- async function generateDownloads(ffmpeg) {
-
-    const outputContainer =
-        document.getElementById("downloads");
-
-    outputContainer.innerHTML = "";
-
-    let index = 0;
-
-    while (true) {
-
-        const filename =
-            `clip_${String(index).padStart(3, "0")}.mp4`;
-
-        try {
-
-            const data =
-                await ffmpeg.readFile(filename);
-
-            const blob =
-                new Blob([data.buffer], {
-                    type: "video/mp4"
-                });
-
-            const url =
-                URL.createObjectURL(blob);
-
-            const a =
-                document.createElement("a");
-
-            a.href = url;
-            a.download = filename;
-
-            a.innerText =
-                `Download ${filename}`;
-
-            a.style.display = "block";
-
-            outputContainer.appendChild(a);
-
-            index++;
-
-        } catch {
-
-            break;
-
-        }
-
+    if(!uploadedFile){
+        alert("Please upload a video.");
+        return;
     }
 
-    log("Finished");
-}
- 
-}
+    let progress=0;
 
-function updateProgress(percent){
-document.getElementById("bar").style.width=
-percent+"%";
+    const interval=setInterval(()=>{
+
+        progress+=5;
+
+        document.getElementById("progressBar").style.width=
+            progress+"%";
+
+        if(progress>=100){
+
+            clearInterval(interval);
+
+            alert(
+                "Ready for FFmpeg integration. This starter UI is working correctly."
+            );
+        }
+
+    },100);
+
 }
 
 function toggleTheme(){
 
-const root=document.documentElement;
+    const body=document.body;
 
-if(root.style.getPropertyValue('--bg')==='#ffffff'){
+    if(body.style.background==="white"){
 
-root.style.setProperty('--bg','#0f172a');
-root.style.setProperty('--card','#1e293b');
-root.style.setProperty('--text','#f8fafc');
+        body.style.background="#111827";
+        body.style.color="white";
 
-}else{
+    }else{
 
-root.style.setProperty('--bg','#ffffff');
-root.style.setProperty('--card','#f3f4f6');
-root.style.setProperty('--text','#111827');
+        body.style.background="white";
+        body.style.color="#111827";
 
-}
+    }
+
 }
 
 </script>
