@@ -312,41 +312,84 @@ logArea.innerHTML+=msg+"<br>";
 logArea.scrollTop=logArea.scrollHeight;
 }
 
-async function processVideo(){
+async function splitVideo(ffmpeg) {
 
-if(!videoFile){
-alert("Upload video first");
-return;
+    const segmentLength = getSegmentLength();
+
+    log("Splitting video...");
+
+    await ffmpeg.exec([
+        "-i",
+        "input.mp4",
+        "-c",
+        "copy",
+        "-map",
+        "0",
+        "-f",
+        "segment",
+        "-segment_time",
+        String(segmentLength),
+        "clip_%03d.mp4"
+    ]);
+
+    generateDownloads(ffmpeg);
 }
-
-log("Initialising FFmpeg...");
-updateProgress(10);
-
-setTimeout(()=>{
-updateProgress(30);
-log("Reading file...");
-},1000);
-
-setTimeout(()=>{
-updateProgress(50);
-log("Calculating segments...");
-},2000);
-
-setTimeout(()=>{
-updateProgress(80);
-log("Splitting video...");
-},3000);
-
-setTimeout(()=>{
-updateProgress(100);
-log("Processing complete.");
-
-alert(
-"Production version would now generate downloadable clip files using FFmpeg.wasm."
-);
 
 },4000);
 
+ async function generateDownloads(ffmpeg) {
+
+    const outputContainer =
+        document.getElementById("downloads");
+
+    outputContainer.innerHTML = "";
+
+    let index = 0;
+
+    while (true) {
+
+        const filename =
+            `clip_${String(index).padStart(3, "0")}.mp4`;
+
+        try {
+
+            const data =
+                await ffmpeg.readFile(filename);
+
+            const blob =
+                new Blob([data.buffer], {
+                    type: "video/mp4"
+                });
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const a =
+                document.createElement("a");
+
+            a.href = url;
+            a.download = filename;
+
+            a.innerText =
+                `Download ${filename}`;
+
+            a.style.display = "block";
+
+            outputContainer.appendChild(a);
+
+            index++;
+
+        } catch {
+
+            break;
+
+        }
+
+    }
+
+    log("Finished");
+}
+ 
 }
 
 function updateProgress(percent){
